@@ -7,7 +7,7 @@
   "scripts": {
     "test": "jest",
     "start": "python -m http.server 8000",
-    "dev": "live-server --port=8000 --open=src/html/index.html",
+    "dev": "live-server --port=8000 --open=index.html",
     "build": "echo 'Build not implemented'"
   },
   "devDependencies": {

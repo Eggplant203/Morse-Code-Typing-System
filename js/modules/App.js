@@ -41,7 +41,7 @@ export class App {
     loadSettings() {
         const settings = JSON.parse(localStorage.getItem('morseSettings') || '{}');
         const keyBinding = settings.keyBinding || 32;
-        const targetWPM = settings.targetWPM || 15;
+        const targetWPM = settings.targetWPM || 10;
         const theme = settings.theme || 'dark';
         const enableCustom = settings.enableCustom !== false; // Default true
         const includeUnknown = settings.includeUnknown !== false; // Default true
@@ -134,6 +134,7 @@ export class App {
         if (!this.isSessionStarted) {
             this.sessionStartTime = Date.now();
             this.isSessionStarted = true;
+            this.startRealtimeUpdates(); // Start real-time WPM updates
         }
         if (!this.wordStartTime || this.currentWordBuffer === '') {
             this.wordStartTime = Date.now();
@@ -152,6 +153,7 @@ export class App {
         if (!this.isSessionStarted) {
             this.sessionStartTime = Date.now();
             this.isSessionStarted = true;
+            this.startRealtimeUpdates(); // Start real-time WPM updates
         }
         if (!this.wordStartTime || this.currentWordBuffer === '') {
             this.wordStartTime = Date.now();
@@ -225,8 +227,30 @@ export class App {
     handleChallengeWord(word) {
         const isCorrect = word.toUpperCase() === this.targetWord;
         if (isCorrect) {
-            // Add points based on word length: longer words = more points using arithmetic series
-            const points = Math.floor(word.length * (word.length + 1) / 2);
+            // Base points based on word length: longer words = more points using arithmetic series
+            const basePoints = Math.floor(word.length * (word.length + 1) / 2);
+            
+            // Calculate current WPM using only accumulated time (same as updateStats)
+            const chars = this.outputText.replace(/\s/g, '').length;
+            const timeElapsed = this.totalTime;
+            let currentWPM = 0;
+            if (timeElapsed > 0 && chars > 0) {
+                const wordCount = chars / 5;
+                const minutesElapsed = timeElapsed / 60000;
+                currentWPM = wordCount / minutesElapsed;
+                
+                // Ensure WPM is a valid number
+                if (!isFinite(currentWPM) || isNaN(currentWPM)) {
+                    currentWPM = 0;
+                }
+            }
+            
+            // WPM bonus: higher speed = higher multiplier (minimum 1x, scales with WPM)
+            const wpmMultiplier = Math.max(1, currentWPM / 10);
+            
+            // Final points = base points × WPM multiplier
+            const points = Math.floor(basePoints * wpmMultiplier);
+            
             this.score += points;
             // Add current word time to total only if correct
             if (this.wordStartTime) {
@@ -242,12 +266,14 @@ export class App {
             this.outputText = '';
             this.totalTime = 0;
             this.updateOutputText();
-            document.getElementById('score').textContent = this.score;
+            const scoreEl = document.getElementById('score');
+            if (scoreEl) scoreEl.textContent = this.score;
             this.showDialog('Incorrect', `You typed "${word}", but the target was "${this.targetWord}".\nFinal score: ${finalScore}`, false, 'Try Again');
         }
         // Reset word timer for next attempt/word BEFORE updating stats
         this.wordStartTime = null;
-        document.getElementById('score').textContent = this.score;
+        const scoreEl2 = document.getElementById('score');
+        if (scoreEl2) scoreEl2.textContent = this.score;
         this.updateStats();
         this.parser.clear();
         this.updateInputBuffer();
@@ -270,7 +296,8 @@ export class App {
     }
 
     updateInputBuffer() {
-        document.getElementById('input-buffer').textContent = this.parser.getCurrentSequence() || '-';
+        const inputBufferEl = document.getElementById('input-buffer');
+        if (inputBufferEl) inputBufferEl.textContent = this.parser.getCurrentSequence() || '-';
     }
 
     updateCurrentWordDisplay() {
@@ -343,29 +370,70 @@ export class App {
     }
 
     updateOutputText() {
-        document.getElementById('output-text').textContent = this.outputText.trim();
+        const outputTextEl = document.getElementById('output-text');
+        if (outputTextEl) outputTextEl.textContent = this.outputText.trim();
     }
 
     updateStats() {
         const chars = this.outputText.replace(/\s/g, '').length;
         const trimmed = this.outputText.trim();
         const words = trimmed === '' ? 0 : trimmed.split(/\s+/).length;
-        const timeElapsed = this.totalTime + (this.wordStartTime ? (Date.now() - this.wordStartTime) : 0);
+        // Use only accumulated time, not current word time for stable WPM display
+        const timeElapsed = this.totalTime;
         const minutes = Math.floor(timeElapsed / 60000);
         const seconds = Math.floor((timeElapsed % 60000) / 1000);
         const milliseconds = timeElapsed % 1000;
-        document.getElementById('char-count').textContent = `Characters: ${chars}`;
-        document.getElementById('word-count').textContent = `Words: ${words}`;
-        document.getElementById('time').textContent = `Time: ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`;
+        
+        // Calculate real-time WPM
+        let currentWPM = 0;
+        if (timeElapsed > 0 && chars > 0) {
+            // Use standard: 5 characters = 1 word
+            const wordCount = chars / 5;
+            const minutesElapsed = timeElapsed / 60000;
+            currentWPM = wordCount / minutesElapsed;
+            
+            // Ensure WPM is a valid number
+            if (!isFinite(currentWPM) || isNaN(currentWPM)) {
+                currentWPM = 0;
+            }
+        }
+        
+        // Use only accumulated time for consistent display
+        const displayTimeElapsed = this.totalTime;
+        const displayMinutes = Math.floor(displayTimeElapsed / 60000);
+        const displaySeconds = Math.floor((displayTimeElapsed % 60000) / 1000);
+        const displayMilliseconds = displayTimeElapsed % 1000;
+        
+        const charCountEl = document.getElementById('char-count');
+        if (charCountEl) charCountEl.textContent = `Characters: ${chars}`;
+        
+        const wordCountEl = document.getElementById('word-count');
+        if (wordCountEl) wordCountEl.textContent = `Words: ${words}`;
+        
+        const timeEl = document.getElementById('time');
+        if (timeEl) timeEl.textContent = `Time: ${displayMinutes.toString().padStart(2, '0')}:${displaySeconds.toString().padStart(2, '0')}.${displayMilliseconds.toString().padStart(3, '0')}`;
+        
+        const speedEl = document.getElementById('speed');
+        if (speedEl) {
+            const displayWPM = currentWPM > 0 ? currentWPM.toFixed(1) : '0.0';
+            speedEl.textContent = `${displayWPM} WPM`;
+            
+            // Force DOM update in case of rendering issues
+            speedEl.style.display = 'inline';
+        }
     }
 
     updateProgressBar(percentage) {
-        document.getElementById('progress-fill').style.width = `${percentage}%`;
+        const progressFillEl = document.getElementById('progress-fill');
+        if (progressFillEl) progressFillEl.style.width = `${percentage}%`;
     }
 
     updateFeedback(action, details) {
-        document.getElementById('current-action').textContent = action;
-        document.getElementById('status').textContent = `Status: ${details}`;
+        const currentActionEl = document.getElementById('current-action');
+        if (currentActionEl) currentActionEl.textContent = action;
+        
+        const statusEl = document.getElementById('status');
+        if (statusEl) statusEl.textContent = `Status: ${details}`;
     }
 
     showSettings() {
@@ -423,6 +491,8 @@ export class App {
             this.clearChallengeData();
             this.fetchRandomWord();
         }
+        // Stop real-time updates when clearing
+        this.stopRealtimeUpdates();
     }
 
     handleExport() {
@@ -610,6 +680,27 @@ export class App {
             this.clearChallengeData();
         }
         this.isSwitchingMode = false;
+        // Start real-time WPM updates
+        this.startRealtimeUpdates();
+    }
+
+    startRealtimeUpdates() {
+        // Clear any existing interval first
+        this.stopRealtimeUpdates();
+        
+        // Update WPM every 1000ms for smoother display
+        this.realtimeInterval = setInterval(() => {
+            if (this.isSessionStarted) {
+                this.updateStats();
+            }
+        }, 1000);
+    }
+
+    stopRealtimeUpdates() {
+        if (this.realtimeInterval) {
+            clearInterval(this.realtimeInterval);
+            this.realtimeInterval = null;
+        }
     }
 
     updateModeUI() {

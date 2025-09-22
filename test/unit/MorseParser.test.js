@@ -1,4 +1,4 @@
-import { MorseParser } from '../../src/js/modules/MorseParser.js';
+import { MorseParser } from '../../js/modules/MorseParser.js';
 
 describe('MorseParser', () => {
     let parser;

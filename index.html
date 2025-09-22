@@ -3,12 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Learn Morse code with interactive practice and challenge modes">
-    <meta name="theme-color" content="#1a1a1a">
     <title>Morse Code Typer</title>
-    <link rel="icon" type="image/svg+xml" href="favicon.svg">
-    <link rel="apple-touch-icon" href="favicon.svg">
-    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="../css/styles.css">
 </head>
 <body>
     <div class="container">
@@ -40,7 +36,7 @@
                 </div>
                 <div class="speed-display">
                     <label>Speed:</label>
-                    <span id="speed">15 WPM</span>
+                    <span id="speed">0.0 WPM</span>
                 </div>
             </div>
 
@@ -154,7 +150,7 @@
             </div>
             <div class="setting-item">
                 <label for="target-wpm">Target WPM:</label>
-                <input type="number" id="target-wpm" value="15" min="5" max="50">
+                <input type="number" id="target-wpm" value="10" min="5" max="50">
             </div>
             <div class="setting-item">
                 <label for="theme">Theme:</label>
@@ -186,6 +182,6 @@
         </div>
     </div>
 
-    <script type="module" src="js/modules/App.js"></script>
+    <script type="module" src="../js/modules/App.js"></script>
 </body>
 </html>

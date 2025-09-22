@@ -1,4 +1,4 @@
-import { App } from '../../src/js/modules/App.js';
+import { App } from '../../js/modules/App.js';
 
 // Mock DOM elements
 document.body.innerHTML = `

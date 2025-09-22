@@ -1,4 +1,4 @@
-import { MorseInputHandler } from '../../src/js/modules/MorseInputHandler.js';
+import { MorseInputHandler } from '../../js/modules/MorseInputHandler.js';
 
 describe('MorseInputHandler', () => {
     let handler;

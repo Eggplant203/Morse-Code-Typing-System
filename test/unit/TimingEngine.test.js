@@ -1,4 +1,4 @@
-import { TimingEngine } from '../../src/js/modules/TimingEngine.js';
+import { TimingEngine } from '../../js/modules/TimingEngine.js';
 
 describe('TimingEngine', () => {
     let engine;
