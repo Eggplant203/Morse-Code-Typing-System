@@ -401,7 +401,7 @@ describe('App', () => {
         app.outputText = 'TEST';
         app.updateStats();
         const timeElement = document.getElementById('time');
-        expect(timeElement.textContent).toMatch(/Time: 00:15\.\d{3}/); // Should show ~15 seconds (10 + 5)
+        expect(timeElement.textContent).toMatch(/Time: 00:10\.\d{3}/); // Should show only accumulated time (10 seconds)
     });
 
     test('should show total time when no current word', () => {

@@ -24,7 +24,6 @@ export class App {
         this.isSwitchingMode = false;
         this.lastTargetWord = '';
         this.lastScore = 0;
-        this.lastDisplayedWPM = 0; // Track last displayed WPM for debounce
 
         this.init();
         this.setupEventListeners();
@@ -231,9 +230,9 @@ export class App {
             // Base points based on word length: longer words = more points using arithmetic series
             const basePoints = Math.floor(word.length * (word.length + 1) / 2);
             
-            // Calculate current WPM using same logic as updateStats
+            // Calculate current WPM using only accumulated time (same as updateStats)
             const chars = this.outputText.replace(/\s/g, '').length;
-            const timeElapsed = this.totalTime + (this.wordStartTime ? (Date.now() - this.wordStartTime) : 0);
+            const timeElapsed = this.totalTime;
             let currentWPM = 0;
             if (timeElapsed > 0 && chars > 0) {
                 const wordCount = chars / 5;
@@ -379,7 +378,8 @@ export class App {
         const chars = this.outputText.replace(/\s/g, '').length;
         const trimmed = this.outputText.trim();
         const words = trimmed === '' ? 0 : trimmed.split(/\s+/).length;
-        const timeElapsed = this.totalTime + (this.wordStartTime ? (Date.now() - this.wordStartTime) : 0);
+        // Use only accumulated time, not current word time for stable WPM display
+        const timeElapsed = this.totalTime;
         const minutes = Math.floor(timeElapsed / 60000);
         const seconds = Math.floor((timeElapsed % 60000) / 1000);
         const milliseconds = timeElapsed % 1000;
@@ -398,6 +398,12 @@ export class App {
             }
         }
         
+        // Use only accumulated time for consistent display
+        const displayTimeElapsed = this.totalTime;
+        const displayMinutes = Math.floor(displayTimeElapsed / 60000);
+        const displaySeconds = Math.floor((displayTimeElapsed % 60000) / 1000);
+        const displayMilliseconds = displayTimeElapsed % 1000;
+        
         const charCountEl = document.getElementById('char-count');
         if (charCountEl) charCountEl.textContent = `Characters: ${chars}`;
         
@@ -405,21 +411,15 @@ export class App {
         if (wordCountEl) wordCountEl.textContent = `Words: ${words}`;
         
         const timeEl = document.getElementById('time');
-        if (timeEl) timeEl.textContent = `Time: ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`;
+        if (timeEl) timeEl.textContent = `Time: ${displayMinutes.toString().padStart(2, '0')}:${displaySeconds.toString().padStart(2, '0')}.${displayMilliseconds.toString().padStart(3, '0')}`;
         
         const speedEl = document.getElementById('speed');
         if (speedEl) {
             const displayWPM = currentWPM > 0 ? currentWPM.toFixed(1) : '0.0';
+            speedEl.textContent = `${displayWPM} WPM`;
             
-            // Only update if WPM changed significantly (>= 0.5) or if it was 0
-            const wpmChange = Math.abs(parseFloat(displayWPM) - this.lastDisplayedWPM);
-            if (wpmChange >= 0.5 || this.lastDisplayedWPM === 0) {
-                speedEl.textContent = `${displayWPM} WPM`;
-                this.lastDisplayedWPM = parseFloat(displayWPM);
-                
-                // Force DOM update in case of rendering issues
-                speedEl.style.display = 'inline';
-            }
+            // Force DOM update in case of rendering issues
+            speedEl.style.display = 'inline';
         }
     }
 
@@ -483,7 +483,6 @@ export class App {
         this.lastActionTime = Date.now();
         this.wordStartTime = null; // Reset word timer
         this.totalTime = 0; // Reset total time
-        this.lastDisplayedWPM = 0; // Reset displayed WPM
         this.updateUI();
         this.updateCurrentWordDisplay();
         this.updateInputBuffer();
