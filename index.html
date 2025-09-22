@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Learn Morse code with interactive practice and challenge modes">
+    <meta name="theme-color" content="#1a1a1a">
+    <title>Morse Code Typer</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="apple-touch-icon" href="favicon.svg">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>MORSE CODE TYPER</h1>
+            <div class="header-buttons">
+                <button id="mode-btn">Mode: Practice</button>
+                <button id="settings-btn">Settings</button>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <div class="input-section">
+                <div class="input-buffer">
+                    <label>Input Buffer:</label>
+                    <span id="input-buffer">-.   --.</span>
+                </div>
+                <div class="current-letter">
+                    <label>Current Word:</label>
+                    <span id="current-letter">-</span>
+                </div>
+                <div class="target-word" id="target-word-section" style="display: none;">
+                    <label>Target Word:</label>
+                    <span id="target-word">-</span>
+                </div>
+                <div class="score-display" id="score-section" style="display: none;">
+                    <label>Score:</label>
+                    <span id="score">0</span>
+                </div>
+                <div class="speed-display">
+                    <label>Speed:</label>
+                    <span id="speed">15 WPM</span>
+                </div>
+            </div>
+
+            <div class="feedback-section">
+                <h2>Real-time Feedback</h2>
+                <div class="progress-bar">
+                    <div id="progress-fill" class="progress-fill"></div>
+                </div>
+                <div class="feedback-info">
+                    <p id="current-action">DASH (450ms)</p>
+                    <p id="status">Status: Building letter "G"</p>
+                    <p id="next-action">Next: Press for dot/dash, pause to complete</p>
+                </div>
+            </div>
+
+            <div class="output-section">
+                <h2>Output Text</h2>
+                <div id="output-text" class="output-text">HELLO WORLD</div>
+                <div class="stats">
+                    <span id="char-count">Characters: 11</span> |
+                    <span id="word-count">Words: 2</span> |
+                    <span id="time">Time: 02:34</span>
+                </div>
+                <div class="export-buttons">
+                    <button id="clear-text">Clear</button>
+                    <select id="export-type" onchange="window.app.handleExport()">
+                        <option value="">Export Options</option>
+                        <option value="text">Export Text</option>
+                        <option value="morse">Export Morse Log</option>
+                        <option value="json">Export JSON Report</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="reference-section">
+                <h2>Morse Reference</h2>
+                <div id="morse-reference" class="morse-reference">
+                    <div class="reference-row">
+                        <span>A: ·-</span>
+                        <span>B: -···</span>
+                        <span>C: -·-·</span>
+                        <span>D: -··</span>
+                        <span>E: ·</span>
+                        <span>F: ··-·</span>
+                    </div>
+                    <div class="reference-row">
+                        <span>G: --·</span>
+                        <span>H: ····</span>
+                        <span>I: ··</span>
+                        <span>J: ·---</span>
+                        <span>K: -·-</span>
+                        <span>L: ·-··</span>
+                    </div>
+                    <div class="reference-row">
+                        <span>M: --</span>
+                        <span>N: -·</span>
+                        <span>O: ---</span>
+                        <span>P: ·--·</span>
+                        <span>Q: --·-</span>
+                        <span>R: ·-·</span>
+                    </div>
+                    <div class="reference-row">
+                        <span>S: ···</span>
+                        <span>T: -</span>
+                        <span>U: ··-</span>
+                        <span>V: ···-</span>
+                        <span>W: ·--</span>
+                        <span>X: -··-</span>
+                    </div>
+                    <div class="reference-row">
+                        <span>Y: -·--</span>
+                        <span>Z: --··</span>
+                        <span>0: -----</span>
+                        <span>1: ·----</span>
+                        <span>2: ··---</span>
+                        <span>3: ···--</span>
+                    </div>
+                    <div class="reference-row">
+                        <span>4: ····-</span>
+                        <span>5: ·····</span>
+                        <span>6: -····</span>
+                        <span>7: --···</span>
+                        <span>8: ---··</span>
+                        <span>9: ----·</span>
+                    </div>
+                </div>
+
+                <div class="custom-reference">
+                    <h3>Custom Characters <button id="toggle-custom" style="float: right; font-size: 0.8em;">Hide</button></h3>
+                    <div class="custom-input">
+                        <input type="text" id="custom-char" placeholder="Char (e.g. [)" maxlength="1">
+                        <input type="text" id="custom-sequence" placeholder="Morse (e.g. -.--.-.)">
+                        <button id="add-custom">Add</button>
+                    </div>
+                    <div id="custom-list" class="custom-list">
+                        <!-- Custom chars will be added here -->
+                    </div>
+                </div>
+                <!-- <button id="toggle-reference">Toggle Full Reference</button> -->
+            </div>
+        </div>
+
+        <div id="settings-panel" class="settings-panel hidden">
+            <h3>Settings</h3>
+            <div class="setting-item">
+                <label for="key-binding">Key Binding:</label>
+                <select id="key-binding">
+                    <option value="32">Spacebar</option>
+                    <option value="13">Enter</option>
+                </select>
+            </div>
+            <div class="setting-item">
+                <label for="target-wpm">Target WPM:</label>
+                <input type="number" id="target-wpm" value="15" min="5" max="50">
+            </div>
+            <div class="setting-item">
+                <label for="theme">Theme:</label>
+                <select id="theme">
+                    <option value="dark">Dark</option>
+                    <option value="light">Light</option>
+                </select>
+            </div>
+            <div class="setting-item checkbox-item">
+                <label for="enable-custom">Enable Custom Characters</label>
+                <input type="checkbox" id="enable-custom" checked>
+            </div>
+            <div class="setting-item checkbox-item">
+                <label for="include-unknown">Include unknown character � in output</label>
+                <input type="checkbox" id="include-unknown" checked>
+            </div>
+            <div class="setting-buttons">
+                <button id="save-settings">Save</button>
+                <button id="close-settings">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="feedback-dialog" class="dialog hidden">
+        <div class="dialog-content">
+            <h3 id="dialog-title">Correct!</h3>
+            <p id="dialog-message">Great job!</p>
+            <button id="dialog-ok">OK</button>
+        </div>
+    </div>
+
+    <script type="module" src="js/modules/App.js"></script>
+</body>
+</html>
