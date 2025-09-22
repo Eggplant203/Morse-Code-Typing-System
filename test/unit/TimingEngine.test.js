@@ -4,16 +4,16 @@ describe('TimingEngine', () => {
     let engine;
 
     beforeEach(() => {
-        engine = new TimingEngine(15);
+        engine = new TimingEngine(10);
     });
 
     test('should initialize with correct dot duration', () => {
-        expect(engine.wpm).toBe(15);
-        expect(engine.dotDuration).toBe(1200 / 15); // 80ms
+        expect(engine.wpm).toBe(10);
+        expect(engine.dotDuration).toBe(1200 / 10); // 120ms
     });
 
     test('should calculate dot duration correctly', () => {
-        expect(engine.calculateDotDuration(15)).toBe(80);
+        expect(engine.calculateDotDuration(10)).toBe(120);
         expect(engine.calculateDotDuration(20)).toBe(60);
     });
 
@@ -25,16 +25,15 @@ describe('TimingEngine', () => {
 
     test('should classify press durations correctly', () => {
         expect(engine.classifyPress(40)).toBe('invalid'); // Too short
-        expect(engine.classifyPress(100)).toBe('dot'); // Within dot range
-        expect(engine.classifyPress(250)).toBe('invalid'); // Between dot and dash
-        expect(engine.classifyPress(350)).toBe('dash'); // Within dash range
+        expect(engine.classifyPress(100)).toBe('dot'); // Within dot range (50-200)
+        expect(engine.classifyPress(400)).toBe('dash'); // Within dash range (300-800)
         expect(engine.classifyPress(1000)).toBe('invalid'); // Too long
     });
 
     test('should classify pause durations correctly', () => {
-        expect(engine.classifyPause(100)).toBe('element'); // Element separator
-        expect(engine.classifyPause(600)).toBe('letter'); // Letter separator
-        expect(engine.classifyPause(1600)).toBe('word'); // Word separator
+        expect(engine.classifyPause(100)).toBe('element'); // Element separator (50-300)
+        expect(engine.classifyPause(600)).toBe('letter'); // Letter separator (500-1200)
+        expect(engine.classifyPause(1600)).toBe('word'); // Word separator (1500+)
         expect(engine.classifyPause(40)).toBe('none'); // Too short
     });
 

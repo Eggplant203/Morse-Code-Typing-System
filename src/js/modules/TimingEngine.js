@@ -1,5 +1,5 @@
 export class TimingEngine {
-    constructor(wpm = 15) {
+    constructor(wpm = 10) {
         this.wpm = wpm;
         this.dotDuration = this.calculateDotDuration(wpm);
         this.updateThresholds();
@@ -13,15 +13,20 @@ export class TimingEngine {
     }
 
     updateThresholds() {
-        this.dotMin = 50;
-        this.dotMax = 200; // Hardcode to spec
-        this.dashMin = 300;
-        this.dashMax = 800;
-        this.elementSeparatorMin = 50;
-        this.elementSeparatorMax = 300;
-        this.letterSeparatorMin = 500; // Spec: 500-1200ms
-        this.letterSeparatorMax = 1200;
-        this.wordSeparatorMin = 1500; // Spec: 1500ms+
+        // Base thresholds for 10 WPM (120ms dot duration)
+        const baseDotDuration = 120; // 10 WPM
+        const scale = this.dotDuration / baseDotDuration;
+
+        // Scale thresholds based on WPM
+        this.dotMin = Math.round(50 * scale);
+        this.dotMax = Math.round(200 * scale);
+        this.dashMin = Math.round(300 * scale);
+        this.dashMax = Math.round(800 * scale);
+        this.elementSeparatorMin = Math.round(50 * scale);
+        this.elementSeparatorMax = Math.round(300 * scale);
+        this.letterSeparatorMin = Math.round(500 * scale);
+        this.letterSeparatorMax = Math.round(1200 * scale);
+        this.wordSeparatorMin = Math.round(1500 * scale);
     }
 
     setWPM(wpm) {
