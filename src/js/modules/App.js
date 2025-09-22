@@ -24,6 +24,7 @@ export class App {
         this.isSwitchingMode = false;
         this.lastTargetWord = '';
         this.lastScore = 0;
+        this.lastDisplayedWPM = 0; // Track last displayed WPM for debounce
 
         this.init();
         this.setupEventListeners();
@@ -234,10 +235,15 @@ export class App {
             const chars = this.outputText.replace(/\s/g, '').length;
             const timeElapsed = this.totalTime + (this.wordStartTime ? (Date.now() - this.wordStartTime) : 0);
             let currentWPM = 0;
-            if (timeElapsed > 0) {
+            if (timeElapsed > 0 && chars > 0) {
                 const wordCount = chars / 5;
                 const minutesElapsed = timeElapsed / 60000;
                 currentWPM = wordCount / minutesElapsed;
+                
+                // Ensure WPM is a valid number
+                if (!isFinite(currentWPM) || isNaN(currentWPM)) {
+                    currentWPM = 0;
+                }
             }
             
             // WPM bonus: higher speed = higher multiplier (minimum 1x, scales with WPM)
@@ -380,11 +386,16 @@ export class App {
         
         // Calculate real-time WPM
         let currentWPM = 0;
-        if (timeElapsed > 0) {
+        if (timeElapsed > 0 && chars > 0) {
             // Use standard: 5 characters = 1 word
             const wordCount = chars / 5;
             const minutesElapsed = timeElapsed / 60000;
             currentWPM = wordCount / minutesElapsed;
+            
+            // Ensure WPM is a valid number
+            if (!isFinite(currentWPM) || isNaN(currentWPM)) {
+                currentWPM = 0;
+            }
         }
         
         const charCountEl = document.getElementById('char-count');
@@ -397,7 +408,19 @@ export class App {
         if (timeEl) timeEl.textContent = `Time: ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`;
         
         const speedEl = document.getElementById('speed');
-        if (speedEl) speedEl.textContent = `${currentWPM.toFixed(1)} WPM`;
+        if (speedEl) {
+            const displayWPM = currentWPM > 0 ? currentWPM.toFixed(1) : '0.0';
+            
+            // Only update if WPM changed significantly (>= 0.5) or if it was 0
+            const wpmChange = Math.abs(parseFloat(displayWPM) - this.lastDisplayedWPM);
+            if (wpmChange >= 0.5 || this.lastDisplayedWPM === 0) {
+                speedEl.textContent = `${displayWPM} WPM`;
+                this.lastDisplayedWPM = parseFloat(displayWPM);
+                
+                // Force DOM update in case of rendering issues
+                speedEl.style.display = 'inline';
+            }
+        }
     }
 
     updateProgressBar(percentage) {
@@ -460,6 +483,7 @@ export class App {
         this.lastActionTime = Date.now();
         this.wordStartTime = null; // Reset word timer
         this.totalTime = 0; // Reset total time
+        this.lastDisplayedWPM = 0; // Reset displayed WPM
         this.updateUI();
         this.updateCurrentWordDisplay();
         this.updateInputBuffer();
@@ -662,12 +686,15 @@ export class App {
     }
 
     startRealtimeUpdates() {
-        // Update WPM every 500ms for real-time display
+        // Clear any existing interval first
+        this.stopRealtimeUpdates();
+        
+        // Update WPM every 1000ms for smoother display
         this.realtimeInterval = setInterval(() => {
             if (this.isSessionStarted) {
                 this.updateStats();
             }
-        }, 500);
+        }, 1000);
     }
 
     stopRealtimeUpdates() {
